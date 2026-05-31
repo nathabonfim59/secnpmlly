@@ -47,6 +47,14 @@ Every release is tagged with a GPG signature. When you run `secnpmlly update`:
 
 ## Install
 
+One line:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nathabonfim59/secnpmlly/main/install.sh | bash
+```
+
+Or manually:
+
 ```bash
 git clone https://github.com/nathabonfim59/secnpmlly.git
 cd secnpmlly
