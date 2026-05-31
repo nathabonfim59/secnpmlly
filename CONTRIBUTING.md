@@ -24,7 +24,7 @@ All PRs are reviewed by the maintainer before merging. Changes that affect secur
 ## What to keep in mind
 
 - **Shell compatibility**: all scripts must work in both bash and zsh without relying on bash-specific features in the sourced runtime files
-- **No external dependencies** beyond `npq`, `lockfile-lint`, and `git` in the runtime wrappers
+- **No external dependencies** beyond `npq`, `node`, and `git` in the runtime wrappers
 - **Idempotent**: `apply-protections.sh` must be safe to run multiple times
 - **TTY-safe**: use the `c()` function from `colors.sh` for any output, never raw ANSI escapes
 

@@ -1,9 +1,12 @@
 VERSION ?= $(shell cat secnpmlly/version | tr -d '[:space:]')
 
-.PHONY: release patch minor major tag push clean version
+.PHONY: release patch minor major tag push clean version test
 
 version:
 	@echo "secnpmlly $(VERSION)"
+
+test:
+	@sh tests/test-lockfile-validator.sh
 
 # ── Releases ──────────────────────────────────────────────────
 # Each target bumps version, commits, and creates a GPG-signed tag.

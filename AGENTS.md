@@ -2,12 +2,12 @@
 
 ## Project
 
-secnpmlly — shell-based supply-chain protection for npm/pnpm/bun. Wraps package manager commands with npq audits and lockfile-lint checks.
+secnpmlly — shell-based supply-chain protection for npm/pnpm/Yarn/bun. Wraps package manager commands with npq audits and built-in lockfile checks.
 
 ## Conventions
 
 - **Language**: POSIX-compatible shell (bash + zsh). No bashisms in sourced runtime files.
-- **No runtime deps** beyond `npq`, `lockfile-lint`, `git`.
+- **No runtime deps** beyond `npq`, `node`, `git`.
 - **Idempotent**: `apply-protections.sh` must be safe to rerun.
 - **TTY-safe**: always use `c()` from `colors.sh` for output. Never raw ANSI escapes.
 - **Security-critical paths**: wrappers (`wrappers/*.sh`), update flow (`bin/secnpmlly`), GPG verification — extra caution on any change here.

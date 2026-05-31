@@ -1,0 +1,14 @@
+{
+  "lockfileVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "fixture",
+      "dependencies": {
+        "left-pad": "1.3.0"
+      }
+    }
+  },
+  "packages": {
+    "left-pad": ["left-pad@1.3.0", "https://registry.npmjs.org/left-pad/-/left-pad-1.3.0.tgz", {}, "sha512-abc="]
+  }
+}

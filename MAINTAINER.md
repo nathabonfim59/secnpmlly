@@ -63,7 +63,7 @@ This way users can verify the key rotation was done by the previous trusted key 
 | `secnpmlly/keys/trusted.asc` | Your public GPG key |
 | `secnpmlly/bin/secnpmlly` | CLI entry point (update, version, status) |
 | `secnpmlly/secnpmlly.sh` | Shell function entry point (wrappers) |
-| `secnpmlly/helpers.sh` | npq audit, lockfile-lint, prompt helpers |
+| `secnpmlly/helpers.sh` | npq audit, lockfile validation, prompt helpers |
 | `secnpmlly/wrappers/*.sh` | Per-package-manager wrappers |
 | `apply-protections.sh` | Installer script |
 | `scripts/bump.sh` | Version bump logic |

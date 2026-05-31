@@ -22,7 +22,7 @@
 | `bun x <pkg>` | npq audit, then execute |
 | `bunx <pkg>` | npq audit, then execute |
 
-On **npq** or **lockfile-lint** failure, you are prompted `[y/N]` (default: abort).
+On **npq** or lockfile validation failure, you are prompted `[y/N]` (default: abort).
 
 ## Protections
 
@@ -37,7 +37,8 @@ On **npq** or **lockfile-lint** failure, you are prompted `[y/N]` (default: abor
 ### Tools installed
 
 - **[npq](https://github.com/lirantal/npq)** - Audits packages before install (age, popularity, provenance, maintainer trust)
-- **[lockfile-lint](https://github.com/lirantal/lockfile-lint)** - Verifies lockfile integrity (HTTPS-only, sha512 hashes, package name validation, allowed hosts)
+
+Lockfile validation is built in. It checks npm, pnpm, Yarn, and Bun lockfiles for registry allowlists, HTTPS-only sources, sha512 integrity, and package-name mismatches.
 
 ### GPG-signed updates
 

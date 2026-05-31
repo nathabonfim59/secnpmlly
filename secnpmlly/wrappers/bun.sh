@@ -1,6 +1,6 @@
 # secnpmlly - bun wrappers
 #   bun install                  -> npq audit (package.json) + install + lockfile validation
-#   bun add <pkg(s)> -> npq audit + bun add --save-text-lockfile + lockfile-lint
+#   bun add <pkg(s)> -> npq audit + bun add --save-text-lockfile + lockfile check
 #   bun x <pkg>      -> npq audit (dry-run) + exec
 #   bunx <pkg>       -> npq audit (dry-run) + exec
 #   anything else    -> pass through

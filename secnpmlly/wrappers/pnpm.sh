@@ -1,6 +1,6 @@
 # secnpmlly - pnpm wrappers
 #   pnpm install          -> npq audit (package.json) + install + lockfile check
-#   pnpm add <pkg(s)> -> npq audit + pnpm add + lockfile-lint
+#   pnpm add <pkg(s)> -> npq audit + pnpm add + lockfile check
 #   pnpm dlx <pkg>    -> npq audit (dry-run) + exec
 #   pnpx <pkg>        -> npq audit (dry-run) + exec
 #   anything else     -> pass through

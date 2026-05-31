@@ -1,7 +1,7 @@
 # secnpmlly - npm wrapper
 #   npm install                              -> npq audit (package.json) + install + lockfile check
-#   npm install <pkg(s)>                      -> npq audit + npm install + lockfile-lint
-#   npm i <pkg(s)>                            -> npq audit + npm install + lockfile-lint
+#   npm install <pkg(s)>                      -> npq audit + npm install + lockfile check
+#   npm i <pkg(s)>                            -> npq audit + npm install + lockfile check
 #   anything else                             -> pass through
 
 npm() {

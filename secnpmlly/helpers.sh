@@ -11,20 +11,6 @@ _npm_supply_prompt() {
   esac
 }
 
-# ── Validate Bun's text lockfile. ─────────────────────────────
-_npm_supply_lint_bun_lockfile() {
-  printf '%s[i]%s Validating bun.lock ...\n' "$(c cyan)" "$(c off)"
-  if command node "$_SECNPMLLY_DIR/validators/bun-lock.js" bun.lock; then
-    printf '%s[+]%s bun.lock validation passed\n' "$(c green)" "$(c off)"
-    return 0
-  fi
-
-  echo ''
-  printf '%s[!]%s bun.lock validation found entries that do not match the policy.\n' "$(c bold_yellow)" "$(c off)"
-  printf '%s[!]%s Review the findings above before proceeding.\n' "$(c bold_yellow)" "$(c off)"
-  _npm_supply_prompt
-}
-
 # ── Detect and lint the project lockfile. ─────────────────────
 # Priority order: package-lock.json > bun.lock > pnpm-lock.yaml > yarn.lock.
 _npm_supply_lint_lockfile() {
@@ -37,15 +23,14 @@ _npm_supply_lint_lockfile() {
       if [ -f package-lock.json ]; then lockfile=package-lock.json; lockfile_type='npm'; fi
       ;;
     pnpm)
-      if [ -f pnpm-lock.yaml ]; then lockfile=pnpm-lock.yaml; lockfile_type='npm'; fi
+      if [ -f pnpm-lock.yaml ]; then lockfile=pnpm-lock.yaml; lockfile_type='pnpm'; fi
       ;;
     yarn)
       if [ -f yarn.lock ]; then lockfile=yarn.lock; lockfile_type='yarn'; fi
       ;;
     bun)
       if [ -f bun.lock ]; then
-        _npm_supply_lint_bun_lockfile
-        return
+        lockfile=bun.lock; lockfile_type='bun'
       elif [ -f bun.lockb ]; then
         printf '%s[!]%s bun.lockb is binary - skipping lockfile validation. Run bun install --save-text-lockfile to create bun.lock.\n' "$(c bold_yellow)" "$(c off)"
         return 0
@@ -53,8 +38,8 @@ _npm_supply_lint_lockfile() {
       ;;
     *)
       if   [ -f package-lock.json ]; then lockfile=package-lock.json; lockfile_type='npm'
-      elif [ -f bun.lock ];          then _npm_supply_lint_bun_lockfile; return
-      elif [ -f pnpm-lock.yaml ];    then lockfile=pnpm-lock.yaml;    lockfile_type='npm'
+      elif [ -f bun.lock ];          then lockfile=bun.lock;          lockfile_type='bun'
+      elif [ -f pnpm-lock.yaml ];    then lockfile=pnpm-lock.yaml;    lockfile_type='pnpm'
       elif [ -f yarn.lock ];         then lockfile=yarn.lock;         lockfile_type='yarn'
       elif [ -f bun.lockb ];         then
         printf '%s[!]%s bun.lockb is binary - skipping lockfile validation. Run bun install --save-text-lockfile to create bun.lock.\n' "$(c bold_yellow)" "$(c off)"
@@ -64,28 +49,30 @@ _npm_supply_lint_lockfile() {
   esac
 
   if [ -z "$lockfile" ]; then
-    printf '%s[!]%s No lockfile found - skipping lockfile-lint\n' "$(c bold_yellow)" "$(c off)"
+    printf '%s[!]%s No lockfile found - skipping lockfile validation\n' "$(c bold_yellow)" "$(c off)"
     return 0
   fi
 
-  local type_arg=''
-  if [ -n "$lockfile_type" ]; then
-    type_arg="--type $lockfile_type"
+  local allowed_hosts='npm'
+  if [ "$lockfile_type" = 'yarn' ]; then
+    allowed_hosts='npm yarn'
   fi
 
-  printf '%s[i]%s Running lockfile-lint on %s ...\n' "$(c cyan)" "$(c off)" "$lockfile"
-  if command lockfile-lint \
+  printf '%s[i]%s Validating %s ...\n' "$(c cyan)" "$(c off)" "$lockfile"
+  # shellcheck disable=SC2086 - allowed_hosts is an intentional list of CLI args
+  if command node "$_SECNPMLLY_DIR/validators/lockfile.js" \
     --path "$lockfile" \
-    $type_arg \
+    --type "$lockfile_type" \
+    --validate-https \
     --validate-integrity \
     --validate-package-names \
-    --allowed-hosts npm; then
-    printf '%s[+]%s lockfile-lint passed\n' "$(c green)" "$(c off)"
+    --allowed-hosts $allowed_hosts; then
+    printf '%s[+]%s lockfile validation passed\n' "$(c green)" "$(c off)"
     return 0
   fi
 
   echo ''
-  printf '%s[!]%s lockfile-lint found entries that do not match the policy.\n' "$(c bold_yellow)" "$(c off)"
+  printf '%s[!]%s lockfile validation found entries that do not match the policy.\n' "$(c bold_yellow)" "$(c off)"
   printf '%s[!]%s Review the findings above before proceeding.\n' "$(c bold_yellow)" "$(c off)"
   _npm_supply_prompt
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# apply-protections.sh - Install secnpmlly: supply-chain protection for npm/pnpm/bun
+# apply-protections.sh - Install secnpmlly: supply-chain protection for npm/pnpm/Yarn/bun
 #
 # Run:  bash apply-protections.sh
 #
@@ -256,16 +256,6 @@ install_npq() {
   fi
 }
 
-install_lockfile_lint() {
-  if command -v lockfile-lint &>/dev/null; then
-    info "lockfile-lint -> already installed ($(lockfile-lint --version 2>/dev/null || echo 'unknown'))"
-  else
-    info "lockfile-lint -> installing globally ..."
-    npm install -g lockfile-lint
-    info "lockfile-lint -> installed"
-  fi
-}
-
 # ---------- 4. Shell rc hooks ----------
 
 MARKER='# >>> secnpmlly >>>'
@@ -320,7 +310,6 @@ apply_pnpmconf
 echo ""
 install_secnpmlly
 install_npq
-install_lockfile_lint
 
 echo ""
 apply_rc_hooks
