@@ -1,5 +1,7 @@
 # secnpmlly
 
+<img width="929" height="300" alt="secnpmlly" src="https://github.com/user-attachments/assets/30b6baa9-7044-43ad-8d73-4ee86d42d687" />
+
 > Supply-chain protection for npm, pnpm, Yarn, and Bun.
 
 `secnpmlly` wraps your package manager commands with security checks before and after every install, so you don't have to think about it.
