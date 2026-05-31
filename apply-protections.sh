@@ -31,6 +31,30 @@ ensure_dir() {
   fi
 }
 
+# ---------- 0. Requirements ----------
+
+check_requirements() {
+  local _missing=false
+  local _cmd
+
+  for _cmd in git node npm gpg; do
+    if ! command -v "$_cmd" &>/dev/null; then
+      if ! $_missing; then
+        echo ""
+        warn "Missing required tools:"
+      fi
+      printf '    %s[x]%s %s
+' "$(c red)" "$(c off)" "$_cmd"
+      _missing=true
+    fi
+  done
+
+  if $_missing; then
+    echo ""
+    die "Install the missing tools and re-run this script."
+  fi
+}
+
 # ---------- 1. Config files ----------
 
 # 1a. npm (~/.npmrc)
@@ -264,6 +288,8 @@ printf '%s  secnpmlly %s%s\n' "$(c bold_cyan)" "$VERSION" "$(c off)"
 printf '%s  Supply-chain protection setup%s\n' "$(c bold_cyan)" "$(c off)"
 printf '%s========================================%s\n' "$(c bold_cyan)" "$(c off)"
 echo ""
+
+check_requirements
 
 apply_npmrc
 apply_bunconf
