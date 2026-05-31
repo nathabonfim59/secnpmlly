@@ -1,6 +1,5 @@
 # secnpmlly - pnpm wrappers
-#   pnpm install (lockfile exists) -> lockfile-lint + pnpm install --frozen-lockfile
-#   pnpm install (no lockfile)     -> npq audit (package.json) + pnpm install + lockfile-lint
+#   pnpm install          -> npq audit (package.json) + install + lockfile check
 #   pnpm add <pkg(s)> -> npq audit + pnpm add + lockfile-lint
 #   pnpm dlx <pkg>    -> npq audit (dry-run) + exec
 #   pnpx <pkg>        -> npq audit (dry-run) + exec
@@ -10,6 +9,7 @@ pnpm() {
   case "$1" in
     install)
       if [ $# -eq 1 ]; then
+        _npm_supply_npq_audit_package_json pnpm || return 1
         if [ -f pnpm-lock.yaml ]; then
           _npm_supply_lint_lockfile || return 1
           command pnpm install --frozen-lockfile

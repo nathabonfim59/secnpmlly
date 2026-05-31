@@ -168,6 +168,7 @@ install_secnpmlly() {
 
   ensure_dir "$INSTALL_DIR/wrappers"
   ensure_dir "$INSTALL_DIR/keys"
+  ensure_dir "$INSTALL_DIR/validators"
 
   # Copy runtime files (sourced by shell rc)
   cp "$SOURCE_DIR/version"      "$INSTALL_DIR/version"
@@ -175,6 +176,7 @@ install_secnpmlly() {
   cp "$SOURCE_DIR/colors.sh"    "$INSTALL_DIR/colors.sh"
   cp "$SOURCE_DIR/helpers.sh"   "$INSTALL_DIR/helpers.sh"
   cp "$SOURCE_DIR/wrappers/"*.sh "$INSTALL_DIR/wrappers/"
+  cp "$SOURCE_DIR/validators/"*.js "$INSTALL_DIR/validators/"
 
   # Install trusted public key (if present)
   if [[ -f "$SOURCE_DIR/keys/trusted.asc" ]]; then
