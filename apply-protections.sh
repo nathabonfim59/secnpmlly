@@ -4,6 +4,10 @@
 #
 # Run:  bash apply-protections.sh
 #
+# Can be run from:
+#   - A git clone (SOURCE_DIR = <script_dir>/secnpmlly)
+#   - The managed repo at $INSTALL_DIR/repo (installed via curl)
+#
 
 set -euo pipefail
 
@@ -11,7 +15,16 @@ set -euo pipefail
 
 INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/secnpmlly"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SOURCE_DIR="$SCRIPT_DIR/secnpmlly"
+
+# Resolve SOURCE_DIR: either next to this script, or from the managed repo
+if [[ -d "$SCRIPT_DIR/secnpmlly" ]]; then
+  SOURCE_DIR="$SCRIPT_DIR/secnpmlly"
+elif [[ -d "$INSTALL_DIR/repo/secnpmlly" ]]; then
+  SOURCE_DIR="$INSTALL_DIR/repo/secnpmlly"
+else
+  echo "Error: Cannot find secnpmlly/ directory."
+  exit 1
+fi
 
 # ---------- Colors (shared with runtime) ----------
 
@@ -43,8 +56,7 @@ check_requirements() {
         echo ""
         warn "Missing required tools:"
       fi
-      printf '    %s[x]%s %s
-' "$(c red)" "$(c off)" "$_cmd"
+      printf '    %s[x]%s %s\n' "$(c red)" "$(c off)" "$_cmd"
       _missing=true
     fi
   done
@@ -151,12 +163,13 @@ apply_pnpmconf() {
 
 install_secnpmlly() {
   if [[ ! -d "$SOURCE_DIR" ]]; then
-    die "Cannot find secnpmlly/ directory next to this script"
+    die "Cannot find secnpmlly/ directory"
   fi
 
   ensure_dir "$INSTALL_DIR/wrappers"
   ensure_dir "$INSTALL_DIR/keys"
 
+  # Copy runtime files (sourced by shell rc)
   cp "$SOURCE_DIR/version"      "$INSTALL_DIR/version"
   cp "$SOURCE_DIR/secnpmlly.sh" "$INSTALL_DIR/secnpmlly.sh"
   cp "$SOURCE_DIR/colors.sh"    "$INSTALL_DIR/colors.sh"
@@ -178,9 +191,9 @@ install_secnpmlly() {
 
     if ! $_already; then
       echo ""
-      printf '%s────────────────────────────────────────────────────────────────%s\n' "$(c bold_cyan)" "$(c off)"
+      printf '%s--------------------------------------------------------------%s\n' "$(c bold_cyan)" "$(c off)"
       printf '%s  GPG Public Key Import%s\n' "$(c bold_cyan)" "$(c off)"
-      printf '%s────────────────────────────────────────────────────────────────%s\n' "$(c bold_cyan)" "$(c off)"
+      printf '%s--------------------------------------------------------------%s\n' "$(c bold_cyan)" "$(c off)"
       echo ""
       echo "  secnpmlly verifies that every update is signed by the maintainer's"
       echo "  GPG key. This protects you from tampered releases."

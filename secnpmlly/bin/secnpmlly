@@ -6,6 +6,7 @@
 # When executed (from CLI), this script handles version/update/help.
 
 SECNPMLLY_DIR="${SECNPMLLY_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/secnpmlly}"
+REPO_DIR="$SECNPMLLY_DIR/repo"
 REPO_URL="https://github.com/nathabonfim59/secnpmlly.git"
 
 # Source colors for pretty output
@@ -42,7 +43,6 @@ _import_trusted_key() {
   local keyfile="$SECNPMLLY_DIR/keys/trusted.asc"
   [ -f "$keyfile" ] || return 0
 
-  # Already in keyring? Nothing to do.
   local _fp
   _fp=$(gpg --with-fingerprint --with-colons "$keyfile" 2>/dev/null \
     | grep '^fpr:' | head -1 | cut -d: -f10)
@@ -50,7 +50,6 @@ _import_trusted_key() {
     gpg --list-keys --with-colons "$_fp" &>/dev/null && return 0
   fi
 
-  # Key not yet in keyring - show details and ask
   echo ""
   printf '%s--------------------------------------------------------------%s\n' "$(c bold_cyan)" "$(c off)"
   printf '%s  GPG Public Key Import%s\n' "$(c bold_cyan)" "$(c off)"
@@ -90,22 +89,39 @@ _trusted_fingerprint() {
     | grep '^fpr:' | head -1 | cut -d: -f10
 }
 
-_tag_signer_fingerprint() {
-  local tag="$1"
-  git tag -v "$tag" 2>&1 \
-    | grep 'using RSA key' | head -1 \
-    | sed 's/.*using RSA key //' | tr -d '[:space:]'
-}
-
 _keyfile_fingerprint() {
   local keyfile="$1"
   gpg --with-fingerprint --with-colons "$keyfile" 2>/dev/null \
     | grep '^fpr:' | head -1 | cut -d: -f10
 }
 
+_tag_signer_fp() {
+  local tag="$1"
+  git -C "$REPO_DIR" tag -v "$tag" 2>&1 \
+    | grep 'using RSA key' | head -1 \
+    | sed 's/.*using RSA key //' | tr -d '[:space:]'
+}
+
 # ── Update command ─────────────────────────────────────────────
 
 _cmd_update() {
+  # Ensure managed repo exists
+  if [ ! -d "$REPO_DIR/.git" ]; then
+    printf '%s[i]%s Initial clone to %s ...\n' "$(c cyan)" "$(c off)" "$REPO_DIR"
+    mkdir -p "$SECNPMLLY_DIR"
+    git clone "$REPO_URL" "$REPO_DIR" 2>&1 || {
+      printf '%s[x]%s Failed to clone. Check your connection.\n' "$(c red)" "$(c off)"
+      exit 1
+    }
+  fi
+
+  # Ensure remote uses HTTPS (not SSH)
+  local _remote
+  _remote=$(git -C "$REPO_DIR" remote get-url origin 2>/dev/null || echo "")
+  if [ "$_remote" != "$REPO_URL" ]; then
+    git -C "$REPO_DIR" remote set-url origin "$REPO_URL"
+  fi
+
   local _old_ver
   _old_ver=$(_ver)
 
@@ -118,25 +134,19 @@ _cmd_update() {
     printf '%s[!]%s No trusted public key found. Skipping signature verification.\n' "$(c bold_yellow)" "$(c off)"
   fi
 
-  # ── Step 2: Clone to temp dir (HTTPS, always fresh) ─────────
-  local _tmpdir
-  _tmpdir=$(mktemp -d "${TMPDIR:-/tmp}/secnpmlly-update-XXXXXX")
-
-  printf '%s[i]%s Fetching releases from %s ...\n' "$(c cyan)" "$(c off)" "$REPO_URL"
-  git clone --bare --depth 50 "$REPO_URL" "$_tmpdir/repo.git" 2>&1 || {
-    printf '%s[x]%s Failed to fetch from remote. Check your connection.\n' "$(c red)" "$(c off)"
-    rm -rf "$_tmpdir"
+  # ── Step 2: Fetch tags ──────────────────────────────────────
+  printf '%s[i]%s Fetching latest releases ...\n' "$(c cyan)" "$(c off)"
+  git -C "$REPO_DIR" fetch origin --tags 2>&1 || {
+    printf '%s[x]%s git fetch failed. Check your connection.\n' "$(c red)" "$(c off)"
     exit 1
   }
 
   # ── Step 3: Find latest tag newer than current ──────────────
   local _latest_tag
-  _latest_tag=$(git -C "$_tmpdir/repo.git" tag -l 'v*' --sort=-v:refname | head -1)
+  _latest_tag=$(git -C "$REPO_DIR" tag -l 'v*' --sort=-v:refname | head -1)
 
   if [ -z "$_latest_tag" ]; then
     printf '%s[!]%s No release tags found.\n' "$(c bold_yellow)" "$(c off)"
-    printf '%s[!]%s Ask the maintainer to create a signed release tag.\n' "$(c bold_yellow)" "$(c off)"
-    rm -rf "$_tmpdir"
     exit 1
   fi
 
@@ -145,7 +155,6 @@ _cmd_update() {
 
   if [ "$_tag_ver" = "$_old_ver" ]; then
     printf '%s[+]%s Already on latest version (%s)\n' "$(c green)" "$(c off)" "$_old_ver"
-    rm -rf "$_tmpdir"
     exit 0
   fi
 
@@ -156,18 +165,14 @@ _cmd_update() {
     printf '%s[i]%s Verifying tag signature for %s ...\n' "$(c cyan)" "$(c off)" "$_latest_tag"
 
     local _signer_fp
-    _signer_fp=$(git -C "$_tmpdir/repo.git" tag -v "$_latest_tag" 2>&1 \
-      | grep 'using RSA key' | head -1 \
-      | sed 's/.*using RSA key //' | tr -d '[:space:]')
+    _signer_fp=$(_tag_signer_fp "$_latest_tag")
 
     if [ -z "$_signer_fp" ]; then
       printf '%s[x]%s Tag %s is NOT signed or verification failed!\n' "$(c red)" "$(c off)" "$_latest_tag"
       printf '%s[x]%s Refusing to install. Possible supply-chain attack.\n' "$(c red)" "$(c off)"
-      rm -rf "$_tmpdir"
       exit 1
     fi
 
-    # Fuzzy match: GPG may report a subkey or partial fingerprint
     if echo "$_old_fp" | grep -q "$_signer_fp" || echo "$_signer_fp" | grep -q "$_old_fp"; then
       printf '%s[+]%s Signature verified - key matches trusted fingerprint\n' "$(c green)" "$(c off)"
     else
@@ -175,16 +180,12 @@ _cmd_update() {
       printf '%s    Trusted: %s%s\n' "$(c bold_yellow)" "$_old_fp" "$(c off)"
       printf '%s    Signer:  %s%s\n' "$(c bold_yellow)" "$_signer_fp" "$(c off)"
       printf '%s[x]%s Refusing to install.\n' "$(c red)" "$(c off)"
-      rm -rf "$_tmpdir"
       exit 1
     fi
   fi
 
   # ── Step 5: Check if public key changed ─────────────────────
-  # Extract the key from the bare repo at the tag
-  local _new_keyfile="$_tmpdir/new-key.asc"
-  git -C "$_tmpdir/repo.git" show "$_latest_tag:secnpmlly/keys/trusted.asc" > "$_new_keyfile" 2>/dev/null
-
+  local _new_keyfile="$REPO_DIR/secnpmlly/keys/trusted.asc"
   if [ -n "$_old_fp" ] && [ -f "$_new_keyfile" ] && [ -s "$_new_keyfile" ]; then
     local _new_fp
     _new_fp=$(_keyfile_fingerprint "$_new_keyfile")
@@ -214,11 +215,9 @@ _cmd_update() {
       printf '%s[i]%s Cloning to %s (read-only review) ...\n' "$(c cyan)" "$(c off)" "$_review_dir"
       git clone --branch "$_latest_tag" --depth 1 "$REPO_URL" "$_review_dir/secnpmlly-review" || {
         printf '%s[x]%s Clone failed.\n' "$(c red)" "$(c off)"
-        rm -rf "$_tmpdir"
         exit 1
       }
 
-      # Strip execution permissions
       chmod -R a-x "$_review_dir/secnpmlly-review/" 2>/dev/null || true
 
       echo ""
@@ -233,28 +232,19 @@ _cmd_update() {
       echo "    secnpmlly update"
       echo ""
       printf '%s[!]%s Aborting update. Review and decide manually.\n' "$(c bold_yellow)" "$(c off)"
-      rm -rf "$_tmpdir"
       exit 1
     fi
   fi
 
-  # ── Step 6: Checkout and install ────────────────────────────
-  printf '%s[i]%s Downloading release %s ...\n' "$(c cyan)" "$(c off)" "$_latest_tag"
-  git clone --branch "$_latest_tag" --depth 1 "$REPO_URL" "$_tmpdir/install" 2>&1 || {
-    printf '%s[x]%s Checkout failed.\n' "$(c red)" "$(c off)"
-    rm -rf "$_tmpdir"
+  # ── Step 6: Merge and install ───────────────────────────────
+  printf '%s[i]%s Checking out %s ...\n' "$(c cyan)" "$(c off)" "$_latest_tag"
+  git -C "$REPO_DIR" merge --ff-only "$_latest_tag" 2>&1 || {
+    printf '%s[x]%s Merge failed. You may have local changes.\n' "$(c red)" "$(c off)"
+    printf '%s[x]%s Run: rm -rf %s && secnpmlly update\n' "$(c red)" "$(c off)" "$REPO_DIR"
     exit 1
   }
 
-  if [ -f "$_tmpdir/install/apply-protections.sh" ]; then
-    bash "$_tmpdir/install/apply-protections.sh"
-  else
-    printf '%s[x]%s apply-protections.sh not found in release.\n' "$(c red)" "$(c off)"
-    rm -rf "$_tmpdir"
-    exit 1
-  fi
-
-  rm -rf "$_tmpdir"
+  bash "$REPO_DIR/apply-protections.sh"
 
   local _new_ver
   _new_ver=$(_ver)
@@ -274,6 +264,7 @@ case "${1:-}" in
     _show_version
     echo ""
     echo "Installed at: $SECNPMLLY_DIR"
+    echo "Repo at:      $REPO_DIR"
     echo ""
     echo "Shell wrappers: loaded via rc file source"
     echo "  npm, npx, pnpm, pnpx, bun, bunx"

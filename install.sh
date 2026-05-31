@@ -9,12 +9,6 @@ set -euo pipefail
 
 REPO_URL="https://github.com/nathabonfim59/secnpmlly.git"
 INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/secnpmlly"
-CLONE_DIR=$(mktemp -d "${TMPDIR:-/tmp}/secnpmlly-install-XXXXXX")
-
-cleanup() {
-  rm -rf "$CLONE_DIR"
-}
-trap cleanup EXIT
 
 # Fallback colors (colors.sh not available yet)
 _is_tty() { [ -t 1 ]; }
@@ -81,17 +75,22 @@ fi
 
 # ── Clone and install ─────────────────────────────────────────
 
-printf '%s[i]%s Cloning secnpmlly ...\n' "$(c cyan)" "$(c off)"
-if ! git clone --depth 1 "$REPO_URL" "$CLONE_DIR/repo" 2>&1; then
-  printf '%s[x]%s Failed to clone repository.\n' "$(c red)" "$(c off)"
-  exit 1
+if [ -d "$INSTALL_DIR/repo/.git" ]; then
+  printf '%s[i]%s Existing installation found. Updating ...\n' "$(c cyan)" "$(c off)"
+  git -C "$INSTALL_DIR/repo" fetch origin 2>&1 || true
+  git -C "$INSTALL_DIR/repo" merge --ff-only origin/main 2>&1 || true
+else
+  printf '%s[i]%s Cloning secnpmlly to %s/repo ...\n' "$(c cyan)" "$(c off)" "$INSTALL_DIR"
+  mkdir -p "$INSTALL_DIR"
+  git clone "$REPO_URL" "$INSTALL_DIR/repo" 2>&1 || {
+    printf '%s[x]%s Failed to clone repository.\n' "$(c red)" "$(c off)"
+    exit 1
+  }
 fi
 
 printf '%s[i]%s Running installer ...\n' "$(c cyan)" "$(c off)"
-cd "$CLONE_DIR/repo"
+cd "$INSTALL_DIR/repo"
 bash apply-protections.sh
-
-printf '%s[i]%s Cleaning up ...\n' "$(c cyan)" "$(c off)"
 
 echo ""
 printf '%sDone!%s Reload your shell:\n' "$(c green)" "$(c off)"
