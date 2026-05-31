@@ -70,6 +70,27 @@ _npm_supply_npq_audit() {
   _npm_supply_prompt
 }
 
+# ── Audit all deps from package.json before a fresh install. ──
+# Used when no lockfile exists yet; reads deps as data via JSON.parse,
+# no code in package.json is executed.
+_npm_supply_npq_audit_package_json() {
+  local _pkg_mgr="${1:-npm}"
+
+  [ -f package.json ] || return 0
+
+  local _pkgs
+  _pkgs=$(node -e "
+const p = JSON.parse(require('fs').readFileSync('./package.json', 'utf8'));
+const d = Object.keys(p.dependencies || {}).concat(Object.keys(p.devDependencies || {}));
+if (d.length) process.stdout.write(d.join(' '));
+" 2>/dev/null)
+
+  [ -n "$_pkgs" ] || return 0
+
+  # shellcheck disable=SC2086 - word-split intentional: each package name is a separate arg
+  _npm_supply_npq_audit "$_pkg_mgr" $_pkgs
+}
+
 # ── Extract the first non-flag argument (package name). ───────
 _npm_supply_first_pkg() {
   for _arg in "$@"; do
