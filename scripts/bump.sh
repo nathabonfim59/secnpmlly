@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bump.sh - Bump secnpmlly version, commit, and prepare for tagging.
+# bump.sh - Bump secnpmlly version, commit, and optionally tag.
 #
 # Usage:
 #   bash scripts/bump.sh patch     0.4.0 -> 0.4.1
@@ -40,6 +40,11 @@ fi
 
 NEW=$(bump_version "$CURRENT" "$1")
 
+if [ "$NEW" = "$CURRENT" ]; then
+  printf '%s[!]%s Version is already %s\n' "$(c bold_yellow)" "$(c off)" "$CURRENT"
+  exit 0
+fi
+
 printf '%s[i]%s Bumping version: %s -> %s\n' "$(c cyan)" "$(c off)" "$CURRENT" "$NEW"
 
 # Update version file
@@ -49,9 +54,11 @@ printf '%s\n' "$NEW" > "$VERSION_FILE"
 git add "$VERSION_FILE"
 git commit -m "chore: bump version to $NEW"
 
-printf '%s[+]%s Version bumped to %s\n' "$(c green)" "$(c off)" "$NEW"
+# Create GPG-signed tag
+printf '%s[i]%s Creating signed tag v%s ...\n' "$(c cyan)" "$(c off)" "$NEW"
+git tag -s "v$NEW" -m "Release v$NEW"
+
+printf '%s[+]%s Version bumped to %s and tagged v%s\n' "$(c green)" "$(c off)" "$NEW" "$NEW"
 echo ""
-echo "Next steps:"
-echo "  make tag      # create signed tag"
-echo "  make push     # push commit + tag to origin"
+echo "Push with:  make push"
 echo ""
