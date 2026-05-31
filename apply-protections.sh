@@ -200,10 +200,10 @@ apply_rc_hooks() {
       continue
     fi
 
-    # Remove old npm-supply-protect block if present
+    # Remove legacy npm-supply-protect block if present
     if grep -qF '# >>> npm-supply-protect >>>' "$rc" 2>/dev/null; then
       sed -i '/# >>> npm-supply-protect >>>/,/# <<< npm-supply-protect <<</d' "$rc"
-      info "rc hook   -> ${rc} removed old npm-supply-protect block"
+      info "rc hook   -> ${rc} removed legacy npm-supply-protect block"
     fi
 
     # Append new minimal hook
