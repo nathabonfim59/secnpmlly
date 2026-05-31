@@ -1,5 +1,6 @@
 # secnpmlly - bun wrappers
-#   bun install      -> bun install --frozen-lockfile --save-text-lockfile + lockfile-lint
+#   bun install (lockfile exists) -> bun install --frozen-lockfile --save-text-lockfile + lockfile-lint
+#   bun install (no lockfile)     -> bun install --save-text-lockfile + lockfile-lint
 #   bun add <pkg(s)> -> npq audit + bun add --save-text-lockfile + lockfile-lint
 #   bun x <pkg>      -> npq audit (dry-run) + exec
 #   bunx <pkg>       -> npq audit (dry-run) + exec
@@ -9,7 +10,11 @@ bun() {
   case "$1" in
     install)
       if [ $# -eq 1 ]; then
-        command bun install --frozen-lockfile --save-text-lockfile && _npm_supply_lint_lockfile
+        if [ -f bun.lock ] || [ -f bun.lockb ]; then
+          command bun install --frozen-lockfile --save-text-lockfile && _npm_supply_lint_lockfile
+        else
+          command bun install --save-text-lockfile && _npm_supply_lint_lockfile
+        fi
       else
         shift
         _npm_supply_npq_audit bun "$@" || return 1
