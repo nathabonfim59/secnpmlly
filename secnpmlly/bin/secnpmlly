@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# secnpmlly CLI — executable entry point for command-line use
+# Installed as ~/.local/bin/secnpmlly (symlink or copy)
+#
+# When sourced (from shell rc), secnpmlly.sh handles shell wrappers.
+# When executed (from CLI), this script handles version/update/help.
+
+SECNPMLLY_DIR="${SECNPMLLY_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/secnpmlly}"
+
+# Source colors for pretty output
+[ -f "$SECNPMLLY_DIR/colors.sh" ] && source "$SECNPMLLY_DIR/colors.sh"
+
+_show_version() {
+  local _ver
+  _ver=$(cat "$SECNPMLLY_DIR/version" 2>/dev/null | tr -d '[:space:]' || echo "unknown")
+  printf '%ssecnpmlly %s%s\n' "$(c bold_cyan)" "$_ver" "$(c off)"
+}
+
+_show_help() {
+  _show_version
+  echo ""
+  echo "Usage: secnpmlly <command>"
+  echo ""
+  echo "Commands:"
+  echo "  version   Show version"
+  echo "  status    Show which wrappers are active"
+  echo "  update    Pull latest version and reinstall"
+  echo "  help      Show this help"
+  echo ""
+  echo "Wrappers are loaded by sourcing secnpmlly.sh in your shell rc."
+  echo "Managed commands: npm, npx, pnpm, pnpx, bun, bunx"
+}
+
+_cmd_update() {
+  local _source
+  _source=$(cat "$SECNPMLLY_DIR/source" 2>/dev/null || echo "")
+
+  if [ -z "$_source" ]; then
+    printf '%s[x]%s Source repo path not found (%s/source).\n' "$(c red)" "$(c off)" "$SECNPMLLY_DIR"
+    printf '%s[x]%s Run apply-protections.sh from the git repo first.\n' "$(c red)" "$(c off)"
+    exit 1
+  fi
+
+  if [ ! -d "$_source/.git" ]; then
+    printf '%s[x]%s %s is not a git repository.\n' "$(c red)" "$(c off)" "$_source"
+    exit 1
+  fi
+
+  local _old_ver _new_ver
+  _old_ver=$(cat "$SECNPMLLY_DIR/version" 2>/dev/null | tr -d '[:space:]' || echo "unknown")
+
+  printf '%s[i]%s Updating from %s ...\n' "$(c cyan)" "$(c off)" "$_source"
+  (cd "$_source" && git pull --ff-only) || {
+    printf '%s[x]%s git pull failed. Resolve conflicts manually.\n' "$(c red)" "$(c off)"
+    exit 1
+  }
+
+  if [ -f "$_source/apply-protections.sh" ]; then
+    bash "$_source/apply-protections.sh"
+  else
+    printf '%s[x]%s apply-protections.sh not found in %s\n' "$(c red)" "$(c off)" "$_source"
+    exit 1
+  fi
+
+  _new_ver=$(cat "$SECNPMLLY_DIR/version" 2>/dev/null | tr -d '[:space:]' || echo "unknown")
+  echo ""
+  if [ "$_old_ver" != "$_new_ver" ]; then
+    printf '%s[+]%s Updated %s -> %s\n' "$(c green)" "$(c off)" "$_old_ver" "$_new_ver"
+  else
+    printf '%s[+]%s Already up to date (%s)\n' "$(c green)" "$(c off)" "$_new_ver"
+  fi
+  echo ""
+  printf '%sReload your shell to activate any changes.%s\n' "$(c bold_yellow)" "$(c off)"
+}
+
+# ── Main ──────────────────────────────────────────────────────
+
+case "${1:-}" in
+  version|--version|-v)
+    _show_version
+    ;;
+  status)
+    _show_version
+    echo ""
+    echo "Installed at: $SECNPMLLY_DIR"
+    echo ""
+    echo "Shell wrappers: loaded via rc file source"
+    echo "  npm, npx, pnpm, pnpx, bun, bunx"
+    ;;
+  update)
+    _cmd_update
+    ;;
+  help|--help|-h|"")
+    _show_help
+    ;;
+  *)
+    printf '%s[x]%s Unknown command: %s\n' "$(c red)" "$(c off)" "$1"
+    _show_help
+    exit 1
+    ;;
+esac

@@ -138,7 +138,16 @@ install_secnpmlly() {
   cp "$SOURCE_DIR/helpers.sh"   "$INSTALL_DIR/helpers.sh"
   cp "$SOURCE_DIR/wrappers/"*.sh "$INSTALL_DIR/wrappers/"
 
+  # Store source repo path for secnpmlly update
+  printf '%s' "$SCRIPT_DIR" > "$INSTALL_DIR/source"
+
+  # Symlink CLI into ~/.local/bin
+  local bin_dir="${XDG_BIN_HOME:-$HOME/.local/bin}"
+  ensure_dir "$bin_dir"
+  ln -sf "$SOURCE_DIR/bin/secnpmlly" "$bin_dir/secnpmlly"
+
   info "secnpmlly -> installed to $INSTALL_DIR"
+  info "secnpmlly -> CLI linked at $bin_dir/secnpmlly"
 }
 
 # ---------- 3. Global tools ----------

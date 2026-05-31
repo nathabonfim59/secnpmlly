@@ -11,23 +11,24 @@ _SECNPMLLY_LOADED=1
 
 _SECNPMLLY_DIR="${_SECNPMLLY_DIR:-$HOME/.local/share/secnpmlly}"
 
-# ── Version ────────────────────────────────────────────────────
+# ── Version & CLI ──────────────────────────────────────────────
 secnpmlly() {
   local _ver
   _ver=$(cat "$_SECNPMLLY_DIR/version" 2>/dev/null || echo "unknown")
   case "${1:-}" in
     version|--version|-v)
-      echo "secnpmlly $_ver"
+      printf '%ssecnpmlly %s%s\n' "$(c bold_cyan)" "$_ver" "$(c off)"
       ;;
     help|--help|-h)
-      echo "secnpmlly - supply-chain protection for npm/pnpm/bun"
+      printf '%ssecnpmlly %s%s\n' "$(c bold_cyan)" "$_ver" "$(c off)"
       echo ""
       echo "Usage: secnpmlly <command>"
       echo ""
       echo "Commands:"
       echo "  version   Show version"
-      echo "  help      Show this help"
       echo "  status    Show which wrappers are active"
+      echo "  update    Pull latest version and reinstall"
+      echo "  help      Show this help"
       echo ""
       echo "Wrappers are loaded automatically when this file is sourced."
       echo "Managed commands: npm, npx, pnpm, pnpx, bun, bunx"
@@ -43,8 +44,11 @@ secnpmlly() {
       type bun  2>/dev/null | head -1 | sed 's/^/  /'
       type bunx 2>/dev/null | head -1 | sed 's/^/  /'
       ;;
+    update)
+      command secnpmlly update
+      ;;
     *)
-      echo "secnpmlly $_ver"
+      printf '%ssecnpmlly %s%s\n' "$(c bold_cyan)" "$_ver" "$(c off)"
       echo "Run 'secnpmlly help' for more information."
       ;;
   esac
