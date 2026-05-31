@@ -27,7 +27,7 @@ secnpmlly() {
       echo "Commands:"
       echo "  version   Show version"
       echo "  status    Show which wrappers are active"
-      echo "  update    Pull latest version and reinstall"
+      echo "  update    Verify and install the latest signed release"
       echo "  help      Show this help"
       echo ""
       echo "Wrappers are loaded automatically when this file is sourced."
@@ -45,6 +45,7 @@ secnpmlly() {
       type bunx 2>/dev/null | head -1 | sed 's/^/  /'
       ;;
     update)
+      # Delegate to the CLI binary (handles GPG verification)
       command secnpmlly update
       ;;
     *)

@@ -131,12 +131,21 @@ install_secnpmlly() {
   fi
 
   ensure_dir "$INSTALL_DIR/wrappers"
+  ensure_dir "$INSTALL_DIR/keys"
 
   cp "$SOURCE_DIR/version"      "$INSTALL_DIR/version"
   cp "$SOURCE_DIR/secnpmlly.sh" "$INSTALL_DIR/secnpmlly.sh"
   cp "$SOURCE_DIR/colors.sh"    "$INSTALL_DIR/colors.sh"
   cp "$SOURCE_DIR/helpers.sh"   "$INSTALL_DIR/helpers.sh"
   cp "$SOURCE_DIR/wrappers/"*.sh "$INSTALL_DIR/wrappers/"
+
+  # Install trusted public key (if present)
+  if [[ -f "$SOURCE_DIR/keys/trusted.asc" ]]; then
+    cp "$SOURCE_DIR/keys/trusted.asc" "$INSTALL_DIR/keys/trusted.asc"
+    # Import into user's GPG keyring
+    gpg --import "$INSTALL_DIR/keys/trusted.asc" 2>/dev/null || true
+    info "secnpmlly -> trusted GPG key imported"
+  fi
 
   # Store source repo path for secnpmlly update
   printf '%s' "$SCRIPT_DIR" > "$INSTALL_DIR/source"
