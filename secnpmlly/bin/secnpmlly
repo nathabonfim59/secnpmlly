@@ -37,7 +37,7 @@ _show_help() {
   echo "  bash $SECNPMLLY_DIR/uninstall.sh"
   echo ""
   echo "Wrappers are loaded by sourcing secnpmlly.sh in your shell rc."
-  echo "Managed commands: npm, npx, pnpm, pnpx, bun, bunx"
+  echo "Managed commands: npm, npx, pnpm, pnpx, yarn, bun, bunx"
 }
 
 # ── GPG helpers ────────────────────────────────────────────────
@@ -303,7 +303,7 @@ case "${1:-}" in
     echo "Repo at:      $REPO_DIR"
     echo ""
     echo "Shell wrappers: loaded via rc file source"
-    echo "  npm, npx, pnpm, pnpx, bun, bunx"
+    echo "  npm, npx, pnpm, pnpx, yarn, bun, bunx"
     ;;
   update)
     _cmd_update

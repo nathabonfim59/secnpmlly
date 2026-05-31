@@ -1,6 +1,6 @@
 # secnpmlly
 
-> Supply-chain protection for npm, pnpm, and bun.
+> Supply-chain protection for npm, pnpm, Yarn, and Bun.
 
 `secnpmlly` wraps your package manager commands with security checks before and after every install, so you don't have to think about it.
 
@@ -14,6 +14,9 @@
 | `pnpm install` | `pnpm install --frozen-lockfile` + lockfile check |
 | `pnpm add <pkg>` | npq audit, then `pnpm add`, then lockfile check |
 | `pnpm dlx <pkg>` | npq audit, then execute |
+| `yarn install` | npq audit, then frozen install, then lockfile check |
+| `yarn add <pkg>` | npq audit, then `yarn add`, then lockfile check |
+| `yarn dlx <pkg>` | npq audit, then execute |
 | `bun install` | `bun install --frozen-lockfile` + lockfile check |
 | `bun add <pkg>` | npq audit, then `bun add`, then lockfile check |
 | `bun x <pkg>` | npq audit, then execute |
@@ -82,7 +85,7 @@ secnpmlly update           Verify and install latest signed release
 secnpmlly help             Show help
 ```
 
-Your normal `npm`, `npx`, `pnpm`, `bun` commands are now wrapped automatically. No workflow changes needed.
+Your normal `npm`, `npx`, `pnpm`, `yarn`, `bun` commands are now wrapped automatically. No workflow changes needed.
 
 ## How updates work
 
@@ -114,6 +117,7 @@ secnpmlly/
     ├── npm.sh
     ├── npx.sh
     ├── pnpm.sh
+    ├── yarn.sh
     └── bun.sh
 
 apply-protections.sh      # Installer

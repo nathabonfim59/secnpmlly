@@ -10,16 +10,15 @@ npm() {
       if [ $# -eq 1 ]; then
         _npm_supply_npq_audit_package_json npm || return 1
         if [ -f package-lock.json ]; then
-          _npm_supply_lint_lockfile || return 1
+          _npm_supply_lint_lockfile npm || return 1
           command npm ci
         else
-          _npm_supply_npq_audit_package_json npm || return 1
-          command npm install && _npm_supply_lint_lockfile
+          command npm install && _npm_supply_lint_lockfile npm
         fi
       else
         shift
         _npm_supply_npq_audit npm "$@" || return 1
-        command npm install "$@" && _npm_supply_lint_lockfile
+        command npm install "$@" && _npm_supply_lint_lockfile npm
       fi
       ;;
     *)

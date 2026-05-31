@@ -28,17 +28,40 @@ _npm_supply_lint_bun_lockfile() {
 # ── Detect and lint the project lockfile. ─────────────────────
 # Priority order: package-lock.json > bun.lock > pnpm-lock.yaml > yarn.lock.
 _npm_supply_lint_lockfile() {
+  local preferred="${1:-}"
   local lockfile=''
   local lockfile_type=''
 
-  if   [ -f package-lock.json ]; then lockfile=package-lock.json; lockfile_type='npm'
-  elif [ -f bun.lock ];          then _npm_supply_lint_bun_lockfile; return
-  elif [ -f pnpm-lock.yaml ];    then lockfile=pnpm-lock.yaml;    lockfile_type='npm'
-  elif [ -f yarn.lock ];         then lockfile=yarn.lock;         lockfile_type='yarn'
-  elif [ -f bun.lockb ];         then
-    printf '%s[!]%s bun.lockb is binary - skipping lockfile validation. Run bun install --save-text-lockfile to create bun.lock.\n' "$(c bold_yellow)" "$(c off)"
-    return 0
-  fi
+  case "$preferred" in
+    npm)
+      if [ -f package-lock.json ]; then lockfile=package-lock.json; lockfile_type='npm'; fi
+      ;;
+    pnpm)
+      if [ -f pnpm-lock.yaml ]; then lockfile=pnpm-lock.yaml; lockfile_type='npm'; fi
+      ;;
+    yarn)
+      if [ -f yarn.lock ]; then lockfile=yarn.lock; lockfile_type='yarn'; fi
+      ;;
+    bun)
+      if [ -f bun.lock ]; then
+        _npm_supply_lint_bun_lockfile
+        return
+      elif [ -f bun.lockb ]; then
+        printf '%s[!]%s bun.lockb is binary - skipping lockfile validation. Run bun install --save-text-lockfile to create bun.lock.\n' "$(c bold_yellow)" "$(c off)"
+        return 0
+      fi
+      ;;
+    *)
+      if   [ -f package-lock.json ]; then lockfile=package-lock.json; lockfile_type='npm'
+      elif [ -f bun.lock ];          then _npm_supply_lint_bun_lockfile; return
+      elif [ -f pnpm-lock.yaml ];    then lockfile=pnpm-lock.yaml;    lockfile_type='npm'
+      elif [ -f yarn.lock ];         then lockfile=yarn.lock;         lockfile_type='yarn'
+      elif [ -f bun.lockb ];         then
+        printf '%s[!]%s bun.lockb is binary - skipping lockfile validation. Run bun install --save-text-lockfile to create bun.lock.\n' "$(c bold_yellow)" "$(c off)"
+        return 0
+      fi
+      ;;
+  esac
 
   if [ -z "$lockfile" ]; then
     printf '%s[!]%s No lockfile found - skipping lockfile-lint\n' "$(c bold_yellow)" "$(c off)"

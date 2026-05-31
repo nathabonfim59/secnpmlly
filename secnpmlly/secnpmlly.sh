@@ -1,4 +1,4 @@
-# secnpmlly - Supply-chain protection for npm/pnpm/bun
+# secnpmlly - Supply-chain protection for npm/pnpm/yarn/bun
 #
 # This is the entry point. Source it from your shell rc:
 #   [ -f ~/.local/share/secnpmlly/secnpmlly.sh ] && source ~/.local/share/secnpmlly/secnpmlly.sh
@@ -31,7 +31,7 @@ secnpmlly() {
       echo "  help      Show this help"
       echo ""
       echo "Wrappers are loaded automatically when this file is sourced."
-      echo "Managed commands: npm, npx, pnpm, pnpx, bun, bunx"
+      echo "Managed commands: npm, npx, pnpm, pnpx, yarn, bun, bunx"
       ;;
     status)
       printf '%ssecnpmlly %s%s\n' "$(c bold_cyan)" "$_ver" "$(c off)"
@@ -41,6 +41,7 @@ secnpmlly() {
       type npx  2>/dev/null | head -1 | sed 's/^/  /'
       type pnpm 2>/dev/null | head -1 | sed 's/^/  /'
       type pnpx 2>/dev/null | head -1 | sed 's/^/  /'
+      type yarn 2>/dev/null | head -1 | sed 's/^/  /'
       type bun  2>/dev/null | head -1 | sed 's/^/  /'
       type bunx 2>/dev/null | head -1 | sed 's/^/  /'
       ;;

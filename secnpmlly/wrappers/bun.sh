@@ -11,22 +11,21 @@ bun() {
       if [ $# -eq 1 ]; then
         _npm_supply_npq_audit_package_json bun || return 1
         if [ -f bun.lock ]; then
-          _npm_supply_lint_lockfile || return 1
+          _npm_supply_lint_lockfile bun || return 1
           command bun install --frozen-lockfile --save-text-lockfile
         else
-          _npm_supply_npq_audit_package_json bun || return 1
-          command bun install --save-text-lockfile && _npm_supply_lint_lockfile
+          command bun install --save-text-lockfile && _npm_supply_lint_lockfile bun
         fi
       else
         shift
         _npm_supply_npq_audit bun "$@" || return 1
-        command bun install "$@" --save-text-lockfile && _npm_supply_lint_lockfile
+        command bun install "$@" --save-text-lockfile && _npm_supply_lint_lockfile bun
       fi
       ;;
     add)
       shift
       _npm_supply_npq_audit bun "$@" || return 1
-      command bun add "$@" --save-text-lockfile && _npm_supply_lint_lockfile
+      command bun add "$@" --save-text-lockfile && _npm_supply_lint_lockfile bun
       ;;
     x)
       local _pkg
