@@ -210,16 +210,15 @@ install_secnpmlly() {
     fi
   fi
 
-  # Store source repo path for secnpmlly update
-  printf '%s' "$SCRIPT_DIR" > "$INSTALL_DIR/source"
-
-  # Symlink CLI into ~/.local/bin
+  # Install CLI binary into ~/.local/bin
   local bin_dir="${XDG_BIN_HOME:-$HOME/.local/bin}"
   ensure_dir "$bin_dir"
-  ln -sf "$SOURCE_DIR/bin/secnpmlly" "$bin_dir/secnpmlly"
+  [ -L "$bin_dir/secnpmlly" ] && rm -f "$bin_dir/secnpmlly"
+  cp "$SOURCE_DIR/bin/secnpmlly" "$bin_dir/secnpmlly"
+  chmod +x "$bin_dir/secnpmlly"
 
   info "secnpmlly -> installed to $INSTALL_DIR"
-  info "secnpmlly -> CLI linked at $bin_dir/secnpmlly"
+  info "secnpmlly -> CLI installed at $bin_dir/secnpmlly"
 }
 
 # ---------- 3. Global tools ----------
