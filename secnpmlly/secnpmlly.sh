@@ -1,5 +1,4 @@
 # secnpmlly — Supply-chain protection for npm/pnpm/bun
-# https://github.com/nathanael/es nurd-protect
 #
 # This is the entry point. Source it from your shell rc:
 #   [ -f ~/.local/share/secnpmlly/secnpmlly.sh ] && source ~/.local/share/secnpmlly/secnpmlly.sh
@@ -34,7 +33,7 @@ secnpmlly() {
       echo "Managed commands: npm, npx, pnpm, pnpx, bun, bunx"
       ;;
     status)
-      echo "secnpmlly $_ver"
+      printf '%ssecnpmlly %s%s\n' "$(c bold_cyan)" "$_ver" "$(c off)"
       echo ""
       echo "Active wrappers:"
       type npm  2>/dev/null | head -1 | sed 's/^/  /'
@@ -51,7 +50,8 @@ secnpmlly() {
   esac
 }
 
-# ── Load helpers & wrappers ────────────────────────────────────
+# ── Load modules ───────────────────────────────────────────────
+source "$_SECNPMLLY_DIR/colors.sh"
 source "$_SECNPMLLY_DIR/helpers.sh"
 for _wrapper in "$_SECNPMLLY_DIR"/wrappers/*.sh; do
   source "$_wrapper"

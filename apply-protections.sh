@@ -13,16 +13,16 @@ INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/secnpmlly"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SOURCE_DIR="$SCRIPT_DIR/secnpmlly"
 
+# ---------- Colors (shared with runtime) ----------
+
+source "$SOURCE_DIR/colors.sh"
+
+# Convenience wrappers using c()
+info()  { printf '%s[+]%s %s\n' "$(c green)" "$(c off)" "$*"; }
+warn()  { printf '%s[!]%s %s\n' "$(c bold_yellow)" "$(c off)" "$*"; }
+die()   { printf '%s[x]%s %s\n' "$(c red)" "$(c off)" "$*"; exit 1; }
+
 # ---------- Helpers ----------
-
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'
-
-info()  { echo -e "${GREEN}[+]${NC} $*"; }
-warn()  { echo -e "${YELLOW}[!]${NC} $*"; }
-die()   { echo -e "${RED}[x]${NC} $*"; exit 1; }
 
 ensure_dir() {
   local dir="$1"
@@ -132,9 +132,9 @@ install_secnpmlly() {
 
   ensure_dir "$INSTALL_DIR/wrappers"
 
-  # Copy all files
   cp "$SOURCE_DIR/version"      "$INSTALL_DIR/version"
   cp "$SOURCE_DIR/secnpmlly.sh" "$INSTALL_DIR/secnpmlly.sh"
+  cp "$SOURCE_DIR/colors.sh"    "$INSTALL_DIR/colors.sh"
   cp "$SOURCE_DIR/helpers.sh"   "$INSTALL_DIR/helpers.sh"
   cp "$SOURCE_DIR/wrappers/"*.sh "$INSTALL_DIR/wrappers/"
 
@@ -167,7 +167,6 @@ install_lockfile_lint() {
 
 MARKER='# >>> secnpmlly >>>'
 MARKER_END='# <<< secnpmlly <<<'
-RC_LINE="[ -f \"${INSTALL_DIR}/secnpmlly.sh\" ] && source \"${INSTALL_DIR}/secnpmlly.sh\""
 
 apply_rc_hooks() {
   local shell_name
@@ -206,14 +205,13 @@ apply_rc_hooks() {
 
 # ---------- main ----------
 
-# Read version for display
 VERSION=$(cat "$SOURCE_DIR/version" 2>/dev/null | tr -d '[:space:]' || echo "unknown")
 
 echo ""
-echo "========================================"
-echo "  secnpmlly $VERSION"
-echo "  Supply-chain protection setup"
-echo "========================================"
+printf '%s========================================%s\n' "$(c bold_cyan)" "$(c off)"
+printf '%s  secnpmlly %s%s\n' "$(c bold_cyan)" "$VERSION" "$(c off)"
+printf '%s  Supply-chain protection setup%s\n' "$(c bold_cyan)" "$(c off)"
+printf '%s========================================%s\n' "$(c bold_cyan)" "$(c off)"
 echo ""
 
 apply_npmrc
@@ -229,9 +227,9 @@ echo ""
 apply_rc_hooks
 
 echo ""
-echo -e "${GREEN}All done.${NC}"
+printf '%sAll done.%s\n' "$(c green)" "$(c off)"
 echo ""
-echo -e "${YELLOW}Reload your shell (source ~/.bashrc or ~/.zshrc) to activate.${NC}"
+printf '%sReload your shell (source ~/.bashrc or ~/.zshrc) to activate.%s\n' "$(c bold_yellow)" "$(c off)"
 echo ""
 echo "Then run: secnpmlly status"
 echo ""

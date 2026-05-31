@@ -3,7 +3,7 @@
 
 # ── Prompt the user on failure; default is NO (abort). ────────
 _npm_supply_prompt() {
-  printf '\033[1;33m[?]\033[0m Continue anyway? [y/N] '
+  printf '%s[?]%s Continue anyway? [y/N] ' "$(c bold_yellow)" "$(c off)"
   read -r _answer
   case "$_answer" in
     [yY]|[yY][eE][sS]) return 0 ;;
@@ -21,11 +21,11 @@ _npm_supply_lint_lockfile() {
   fi
 
   if [ -z "$lockfile" ]; then
-    echo '\033[1;33m[!]\033[0m No lockfile found - skipping lockfile-lint'
+    printf '%s[!]%s No lockfile found - skipping lockfile-lint\n' "$(c bold_yellow)" "$(c off)"
     return 0
   fi
 
-  echo '\033[0;36m[i]\033[0m Running lockfile-lint on '"$lockfile"' ...'
+  printf '%s[i]%s Running lockfile-lint on %s ...\n' "$(c cyan)" "$(c off)" "$lockfile"
   if command lockfile-lint \
     --path "$lockfile" \
     --validate-https \
@@ -33,13 +33,13 @@ _npm_supply_lint_lockfile() {
     --validate-package-names \
     --allowed-hosts npm \
     --allowed-schemes "https:" "file:"; then
-    echo '\033[0;32m[+]\033[0m lockfile-lint passed'
+    printf '%s[+]%s lockfile-lint passed\n' "$(c green)" "$(c off)"
     return 0
   fi
 
   echo ''
-  echo '\033[0;31m[x]\033[0m lockfile-lint FAILED - possible supply-chain tampering detected!'
-  echo '\033[0;31m[x]\033[0m Review the issues above carefully before proceeding.'
+  printf '%s[x]%s lockfile-lint FAILED - possible supply-chain tampering detected!\n' "$(c red)" "$(c off)"
+  printf '%s[x]%s Review the issues above carefully before proceeding.\n' "$(c red)" "$(c off)"
   _npm_supply_prompt
 }
 
@@ -48,15 +48,15 @@ _npm_supply_npq_audit() {
   local _pkg_mgr="${1:-npm}"
   shift
 
-  echo '\033[0;36m[i]\033[0m Auditing packages with npq ...'
+  printf '%s[i]%s Auditing packages with npq ...\n' "$(c cyan)" "$(c off)"
   if NPQ_PKG_MGR="$_pkg_mgr" command npq install "$@" --dry-run 2>&1; then
-    echo '\033[0;32m[+]\033[0m npq audit passed'
+    printf '%s[+]%s npq audit passed\n' "$(c green)" "$(c off)"
     return 0
   fi
 
   echo ''
-  echo '\033[0;31m[x]\033[0m npq audit FAILED - supply-chain concerns detected!'
-  echo '\033[0;31m[x]\033[0m Review the issues above carefully.'
+  printf '%s[x]%s npq audit FAILED - supply-chain concerns detected!\n' "$(c red)" "$(c off)"
+  printf '%s[x]%s Review the issues above carefully.\n' "$(c red)" "$(c off)"
   _npm_supply_prompt
 }
 
