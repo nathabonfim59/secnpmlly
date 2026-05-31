@@ -39,7 +39,6 @@ _npm_supply_lint_lockfile() {
   if command lockfile-lint \
     --path "$lockfile" \
     $type_arg \
-    --validate-https \
     --validate-integrity \
     --validate-package-names \
     --allowed-hosts npm \
