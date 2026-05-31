@@ -142,9 +142,48 @@ install_secnpmlly() {
   # Install trusted public key (if present)
   if [[ -f "$SOURCE_DIR/keys/trusted.asc" ]]; then
     cp "$SOURCE_DIR/keys/trusted.asc" "$INSTALL_DIR/keys/trusted.asc"
-    # Import into user's GPG keyring
-    gpg --import "$INSTALL_DIR/keys/trusted.asc" 2>/dev/null || true
-    info "secnpmlly -> trusted GPG key imported"
+
+    # Check if already imported
+    local _fp
+    _fp=$(gpg --with-fingerprint --with-colons "$INSTALL_DIR/keys/trusted.asc" 2>/dev/null \
+      | grep '^fpr:' | head -1 | cut -d: -f10)
+    local _already=false
+    if [[ -n "$_fp" ]]; then
+      gpg --list-keys --with-colons "$_fp" &>/dev/null && _already=true
+    fi
+
+    if ! $_already; then
+      echo ""
+      printf '%s────────────────────────────────────────────────────────────────%s\n' "$(c bold_cyan)" "$(c off)"
+      printf '%s  GPG Public Key Import%s\n' "$(c bold_cyan)" "$(c off)"
+      printf '%s────────────────────────────────────────────────────────────────%s\n' "$(c bold_cyan)" "$(c off)"
+      echo ""
+      echo "  secnpmlly verifies that every update is signed by the maintainer's"
+      echo "  GPG key. This protects you from tampered releases."
+      echo ""
+      echo "  We need to import this public key into your GPG keyring so that"
+      echo "  'secnpmlly update' can verify signatures."
+      echo ""
+      echo "  Key details:"
+      gpg --with-fingerprint "$INSTALL_DIR/keys/trusted.asc" 2>/dev/null \
+        | grep -E '(pub|uid|sub|Key fingerprint)' \
+        | sed 's/^/    /'
+      echo ""
+      printf '  %sImport this key into your GPG keyring? [Y/n]%s ' "$(c bold_yellow)" "$(c off)"
+      read -r _answer
+      case "$_answer" in
+        n|N|no|No|NO)
+          warn "Key not imported. secnpmlly update will skip signature verification."
+          warn "You can import it later: gpg --import $INSTALL_DIR/keys/trusted.asc"
+          ;;
+        *)
+          gpg --import "$INSTALL_DIR/keys/trusted.asc" 2>/dev/null || true
+          info "secnpmlly -> trusted GPG key imported"
+          ;;
+      esac
+    else
+      info "secnpmlly -> trusted GPG key already in keyring"
+    fi
   fi
 
   # Store source repo path for secnpmlly update

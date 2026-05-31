@@ -41,9 +41,44 @@ _show_help() {
 # Idempotent — safe to call multiple times.
 _import_trusted_key() {
   local keyfile="$SECNPMLLY_DIR/keys/trusted.asc"
-  if [ -f "$keyfile" ]; then
-    gpg --import "$keyfile" 2>/dev/null || true
+  [ -f "$keyfile" ] || return 0
+
+  # Already in keyring? Nothing to do.
+  local _fp
+  _fp=$(gpg --with-fingerprint --with-colons "$keyfile" 2>/dev/null \
+    | grep '^fpr:' | head -1 | cut -d: -f10)
+  if [ -n "$_fp" ]; then
+    gpg --list-keys --with-colons "$_fp" &>/dev/null && return 0
   fi
+
+  # Key not yet in keyring — show details and ask
+  echo ""
+  printf '%s────────────────────────────────────────────────────────────────%s\n' "$(c bold_cyan)" "$(c off)"
+  printf '%s  GPG Public Key Import%s\n' "$(c bold_cyan)" "$(c off)"
+  printf '%s────────────────────────────────────────────────────────────────%s\n' "$(c bold_cyan)" "$(c off)"
+  echo ""
+  echo "  secnpmlly verifies that every update is signed by the maintainer's"
+  echo "  GPG key. This protects you from tampered releases."
+  echo ""
+  echo "  We need to import this public key into your GPG keyring so that"
+  echo "  'secnpmlly update' can verify signatures."
+  echo ""
+  echo "  Key details:"
+  gpg --with-fingerprint "$keyfile" 2>/dev/null \
+    | grep -E '(pub|uid|sub|Key fingerprint)' \
+    | sed 's/^/    /'
+  echo ""
+  printf '  %sImport this key into your GPG keyring? [Y/n]%s ' "$(c bold_yellow)" "$(c off)"
+  read -r _answer
+  case "$_answer" in
+    n|N|no|No|NO)
+      printf '%s[!]%s Key not imported. Update will skip signature verification.\n' "$(c bold_yellow)" "$(c off)"
+      ;;
+    *)
+      gpg --import "$keyfile" 2>/dev/null || true
+      printf '%s[+]%s Trusted GPG key imported.\n' "$(c green)" "$(c off)"
+      ;;
+  esac
 }
 
 # Get the fingerprint of the trusted key file currently installed.
