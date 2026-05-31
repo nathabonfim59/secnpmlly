@@ -223,6 +223,14 @@ install_secnpmlly() {
     fi
   fi
 
+  # Install uninstall script
+  local _uninstall_src
+  _uninstall_src="$(dirname "$SOURCE_DIR")/uninstall.sh"
+  if [[ -f "$_uninstall_src" ]]; then
+    cp "$_uninstall_src" "$INSTALL_DIR/uninstall.sh"
+    chmod +x "$INSTALL_DIR/uninstall.sh"
+  fi
+
   # Install CLI binary into ~/.local/bin
   local bin_dir="${XDG_BIN_HOME:-$HOME/.local/bin}"
   ensure_dir "$bin_dir"

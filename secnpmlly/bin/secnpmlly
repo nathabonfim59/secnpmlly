@@ -33,6 +33,9 @@ _show_help() {
   echo "  update    Verify and install the latest signed release"
   echo "  help      Show this help"
   echo ""
+  echo "To uninstall:"
+  echo "  bash $SECNPMLLY_DIR/uninstall.sh"
+  echo ""
   echo "Wrappers are loaded by sourcing secnpmlly.sh in your shell rc."
   echo "Managed commands: npm, npx, pnpm, pnpx, bun, bunx"
 }
@@ -186,7 +189,12 @@ _cmd_update() {
       exit 1
     fi
 
-    if echo "$_old_fp" | grep -q "$_signer_fp" || echo "$_signer_fp" | grep -q "$_old_fp"; then
+    # Accept the primary key or any of its subkeys
+    local _trusted_fps
+    _trusted_fps=$(gpg --with-colons --fingerprint "$_old_fp" 2>/dev/null \
+      | grep '^fpr:' | cut -d: -f10)
+
+    if echo "$_trusted_fps" | grep -qF "$_signer_fp"; then
       printf '%s[+]%s Signature verified - key matches trusted fingerprint\n' "$(c green)" "$(c off)"
     else
       printf '%s[x]%s Tag %s was signed by an UNTRUSTED key!\n' "$(c red)" "$(c off)" "$_latest_tag"
