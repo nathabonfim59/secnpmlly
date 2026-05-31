@@ -89,9 +89,9 @@ _trusted_fingerprint() {
     | grep '^fpr:' | head -1 | cut -d: -f10
 }
 
-_keyfile_fingerprint() {
-  local keyfile="$1"
-  gpg --with-fingerprint --with-colons "$keyfile" 2>/dev/null \
+# Get the fingerprint of a key embedded in a string (from git show)
+_fingerprint_from_text() {
+  echo "$1" | gpg --with-fingerprint --with-colons /dev/stdin 2>/dev/null \
     | grep '^fpr:' | head -1 | cut -d: -f10
 }
 
@@ -103,9 +103,22 @@ _tag_signer_fp() {
 }
 
 # ── Update command ─────────────────────────────────────────────
+#
+# Flow:
+#   1. Ensure managed repo clone (HTTPS)
+#   2. Import trusted key
+#   3. git fetch --tags (downloads metadata only, no checkout)
+#   4. Find latest tag > current version
+#   5. Verify tag signature (GPG)
+#   6. Extract key from tag with git show (no checkout)
+#      - If key changed -> ABORT, clone to safe tmpdir for review
+#   7. git merge --ff-only (now safe to checkout)
+#   8. Run apply-protections.sh
+#      - On failure -> git checkout HEAD~1 (rollback)
+#
 
 _cmd_update() {
-  # Ensure managed repo exists
+  # ── Step 1: Ensure managed repo ─────────────────────────────
   if [ ! -d "$REPO_DIR/.git" ]; then
     printf '%s[i]%s Initial clone to %s ...\n' "$(c cyan)" "$(c off)" "$REPO_DIR"
     mkdir -p "$SECNPMLLY_DIR"
@@ -115,7 +128,7 @@ _cmd_update() {
     }
   fi
 
-  # Ensure remote uses HTTPS (not SSH)
+  # Ensure remote is HTTPS
   local _remote
   _remote=$(git -C "$REPO_DIR" remote get-url origin 2>/dev/null || echo "")
   if [ "$_remote" != "$REPO_URL" ]; then
@@ -125,7 +138,7 @@ _cmd_update() {
   local _old_ver
   _old_ver=$(_ver)
 
-  # ── Step 1: Import trusted key ──────────────────────────────
+  # ── Step 2: Import trusted key ──────────────────────────────
   _import_trusted_key
 
   local _old_fp
@@ -134,14 +147,14 @@ _cmd_update() {
     printf '%s[!]%s No trusted public key found. Skipping signature verification.\n' "$(c bold_yellow)" "$(c off)"
   fi
 
-  # ── Step 2: Fetch tags ──────────────────────────────────────
+  # ── Step 3: Fetch tags (no checkout) ────────────────────────
   printf '%s[i]%s Fetching latest releases ...\n' "$(c cyan)" "$(c off)"
   git -C "$REPO_DIR" fetch origin --tags 2>&1 || {
     printf '%s[x]%s git fetch failed. Check your connection.\n' "$(c red)" "$(c off)"
     exit 1
   }
 
-  # ── Step 3: Find latest tag newer than current ──────────────
+  # ── Step 4: Find latest tag newer than current ──────────────
   local _latest_tag
   _latest_tag=$(git -C "$REPO_DIR" tag -l 'v*' --sort=-v:refname | head -1)
 
@@ -160,7 +173,7 @@ _cmd_update() {
 
   printf '%s[i]%s Found new release: %s -> %s\n' "$(c cyan)" "$(c off)" "$_old_ver" "$_tag_ver"
 
-  # ── Step 4: Verify tag signature ────────────────────────────
+  # ── Step 5: Verify tag signature ────────────────────────────
   if [ -n "$_old_fp" ]; then
     printf '%s[i]%s Verifying tag signature for %s ...\n' "$(c cyan)" "$(c off)" "$_latest_tag"
 
@@ -184,11 +197,15 @@ _cmd_update() {
     fi
   fi
 
-  # ── Step 5: Check if public key changed ─────────────────────
-  local _new_keyfile="$REPO_DIR/secnpmlly/keys/trusted.asc"
-  if [ -n "$_old_fp" ] && [ -f "$_new_keyfile" ] && [ -s "$_new_keyfile" ]; then
+  # ── Step 6: Check key at tag (without checkout) ─────────────
+  #    Extract the key file content directly from the tag object.
+  #    Working tree is NOT modified.
+  local _new_key_text
+  _new_key_text=$(git -C "$REPO_DIR" show "$_latest_tag:secnpmlly/keys/trusted.asc" 2>/dev/null || echo "")
+
+  if [ -n "$_old_fp" ] && [ -n "$_new_key_text" ]; then
     local _new_fp
-    _new_fp=$(_keyfile_fingerprint "$_new_keyfile")
+    _new_fp=$(_fingerprint_from_text "$_new_key_text")
 
     if [ -n "$_new_fp" ] && [ "$_old_fp" != "$_new_fp" ]; then
       echo ""
@@ -198,45 +215,50 @@ _cmd_update() {
       printf '%s*                                                            *%s\n' "$(c bold_red)" "$(c off)"
       printf '%s**************************************************************%s\n' "$(c bold_red)" "$(c off)"
       echo ""
-      printf '%s  Old fingerprint: %s%s\n' "$(c bold_yellow)" "$_old_fp" "$(c off)"
-      printf '%s  New fingerprint: %s%s\n' "$(c bold_yellow)" "$_new_fp" "$(c off)"
+      printf '  %sOld fingerprint: %s%s\n' "$(c bold_yellow)" "$_old_fp" "$(c off)"
+      printf '  %sNew fingerprint: %s%s\n' "$(c bold_yellow)" "$_new_fp" "$(c off)"
       echo ""
       echo "  The signing key in the release does not match the one you trusted."
       echo "  This could mean:"
       echo "    - The repository was compromised"
       echo "    - The maintainer rotated keys (check official channels)"
       echo ""
-      echo "  Cloning to a safe temp directory for manual review (no execution)."
+      echo "  No code has been checked out. Your installation is safe."
       echo ""
 
+      # Clone to a safe temp dir for manual review (no execution)
       local _review_dir
       _review_dir=$(mktemp -d "${TMPDIR:-/tmp}/secnpmlly-audit-XXXXXX")
 
       printf '%s[i]%s Cloning to %s (read-only review) ...\n' "$(c cyan)" "$(c off)" "$_review_dir"
-      git clone --branch "$_latest_tag" --depth 1 "$REPO_URL" "$_review_dir/secnpmlly-review" || {
-        printf '%s[x]%s Clone failed.\n' "$(c red)" "$(c off)"
-        exit 1
-      }
+      if git clone --branch "$_latest_tag" --depth 1 "$REPO_URL" "$_review_dir/secnpmlly-review" 2>&1; then
+        chmod -R a-x "$_review_dir/secnpmlly-review/" 2>/dev/null || true
 
-      chmod -R a-x "$_review_dir/secnpmlly-review/" 2>/dev/null || true
+        echo ""
+        printf '%s[i]%s Review the code at: %s%s\n' "$(c cyan)" "$(c off)" "$_review_dir/secnpmlly-review"
+        echo ""
+        printf '%s[i]%s Compare keys manually:\n' "$(c cyan)" "$(c off)"
+        echo "  diff $SECNPMLLY_DIR/keys/trusted.asc $_review_dir/secnpmlly-review/secnpmlly/keys/trusted.asc"
+        echo ""
+        echo "  If you trust the new key, run:"
+        echo "    gpg --import $_review_dir/secnpmlly-review/secnpmlly/keys/trusted.asc"
+        echo "    cp $_review_dir/secnpmlly-review/secnpmlly/keys/trusted.asc $SECNPMLLY_DIR/keys/trusted.asc"
+        echo "    secnpmlly update"
+      else
+        printf '%s[x]%s Clone for review failed.\n' "$(c red)" "$(c off)"
+        rm -rf "$_review_dir"
+      fi
 
-      echo ""
-      printf '%s[i]%s Review the code at: %s%s\n' "$(c cyan)" "$(c off)" "$_review_dir/secnpmlly-review"
-      echo ""
-      printf '%s[i]%s Compare keys manually:\n' "$(c cyan)" "$(c off)"
-      echo "  diff $SECNPMLLY_DIR/keys/trusted.asc $_review_dir/secnpmlly-review/secnpmlly/keys/trusted.asc"
-      echo ""
-      echo "  If you trust the new key, run:"
-      echo "    gpg --import $_review_dir/secnpmlly-review/secnpmlly/keys/trusted.asc"
-      echo "    cp $_review_dir/secnpmlly-review/secnpmlly/keys/trusted.asc $SECNPMLLY_DIR/keys/trusted.asc"
-      echo "    secnpmlly update"
       echo ""
       printf '%s[!]%s Aborting update. Review and decide manually.\n' "$(c bold_yellow)" "$(c off)"
       exit 1
     fi
   fi
 
-  # ── Step 6: Merge and install ───────────────────────────────
+  # ── Step 7: Merge (working tree is updated now) ─────────────
+  local _previous_ref
+  _previous_ref=$(git -C "$REPO_DIR" rev-parse HEAD)
+
   printf '%s[i]%s Checking out %s ...\n' "$(c cyan)" "$(c off)" "$_latest_tag"
   git -C "$REPO_DIR" merge --ff-only "$_latest_tag" 2>&1 || {
     printf '%s[x]%s Merge failed. You may have local changes.\n' "$(c red)" "$(c off)"
@@ -244,7 +266,13 @@ _cmd_update() {
     exit 1
   }
 
-  bash "$REPO_DIR/apply-protections.sh"
+  # ── Step 8: Install ─────────────────────────────────────────
+  #    If installer fails, roll back the working tree immediately.
+  if ! bash "$REPO_DIR/apply-protections.sh"; then
+    printf '%s[x]%s Installer failed. Rolling back ...\n' "$(c red)" "$(c off)"
+    git -C "$REPO_DIR" checkout "$_previous_ref" 2>/dev/null
+    exit 1
+  fi
 
   local _new_ver
   _new_ver=$(_ver)
