@@ -1,4 +1,4 @@
-# secnpmlly colors — TTY-aware color output
+# secnpmlly colors - TTY-aware color output
 # sourced by secnpmlly.sh and apply-protections.sh; do not source standalone.
 
 # Returns the ANSI escape code for a named color when stdout is a TTY.
@@ -8,7 +8,7 @@
 #   echo "$(c green)success$(c off) message"
 #   printf '%s[+]%s done\n' "$(c green)" "$(c off)"
 #
-# Named colors (standard SGR codes — works with any terminal theme):
+# Named colors (standard SGR codes - works with any terminal theme):
 #   black red green yellow blue magenta cyan white
 #   bold_black bold_red bold_green bold_yellow bold_blue bold_magenta bold_cyan bold_white
 #   off  (reset all)
@@ -20,7 +20,7 @@ c() {
   _secnpmlly_is_tty || return 0
 
   case "$1" in
-    # Standard colors (0;3x) — these pick up the user's terminal theme
+    # Standard colors (0;3x) - these pick up the user's terminal theme
     black)        printf '\033[0;30m' ;;
     red)          printf '\033[0;31m' ;;
     green)        printf '\033[0;32m' ;;

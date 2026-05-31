@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bump.sh — Bump secnpmlly version, commit, and prepare for tagging.
+# bump.sh - Bump secnpmlly version, commit, and prepare for tagging.
 #
 # Usage:
 #   bash scripts/bump.sh patch     0.4.0 -> 0.4.1

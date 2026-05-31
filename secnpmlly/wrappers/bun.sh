@@ -1,4 +1,4 @@
-# secnpmlly — bun wrappers
+# secnpmlly - bun wrappers
 #   bun install      -> bun install --frozen-lockfile + lockfile-lint
 #   bun add <pkg(s)> -> npq audit + bun add + lockfile-lint
 #   bun x <pkg>      -> npq audit (dry-run) + exec

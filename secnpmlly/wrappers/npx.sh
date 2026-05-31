@@ -1,4 +1,4 @@
-# secnpmlly — npx wrapper
+# secnpmlly - npx wrapper
 #   npx <pkg> -> npq audit (dry-run), prompt on failure, then exec
 
 npx() {

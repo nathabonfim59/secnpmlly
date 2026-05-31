@@ -1,4 +1,4 @@
-# secnpmlly — pnpm wrappers
+# secnpmlly - pnpm wrappers
 #   pnpm install      -> pnpm install --frozen-lockfile + lockfile-lint
 #   pnpm add <pkg(s)> -> npq audit + pnpm add + lockfile-lint
 #   pnpm dlx <pkg>    -> npq audit (dry-run) + exec

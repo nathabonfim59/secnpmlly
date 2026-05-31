@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# apply-protections.sh — Install secnpmlly: supply-chain protection for npm/pnpm/bun
+# apply-protections.sh - Install secnpmlly: supply-chain protection for npm/pnpm/bun
 #
 # Run:  bash apply-protections.sh
 #

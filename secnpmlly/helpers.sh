@@ -1,4 +1,4 @@
-# secnpmlly helpers — shared utilities for all wrappers
+# secnpmlly helpers - shared utilities for all wrappers
 # sourced by secnpmlly.sh; do not source standalone.
 
 # ── Prompt the user on failure; default is NO (abort). ────────

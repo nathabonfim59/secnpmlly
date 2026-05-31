@@ -31,7 +31,7 @@ read -r GPG_EMAIL
 
 echo ""
 printf '%s[i]%s Generating GPG key for %s <%s> ...\n' "$(c cyan)" "$(c off)" "$GPG_NAME" "$GPG_EMAIL"
-echo "  (this may take a moment — gathering entropy)"
+echo "  (this may take a moment - gathering entropy)"
 echo ""
 
 # ── Step 2: Generate key ──────────────────────────────────────

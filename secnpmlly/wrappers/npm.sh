@@ -1,4 +1,4 @@
-# secnpmlly — npm wrapper
+# secnpmlly - npm wrapper
 #   npm install          -> npm ci  + lockfile-lint
 #   npm install <pkg(s)> -> npq audit + npm install + lockfile-lint
 #   npm i <pkg(s)>       -> npq audit + npm install + lockfile-lint

@@ -1,4 +1,4 @@
-# secnpmlly — Supply-chain protection for npm/pnpm/bun
+# secnpmlly - Supply-chain protection for npm/pnpm/bun
 #
 # This is the entry point. Source it from your shell rc:
 #   [ -f ~/.local/share/secnpmlly/secnpmlly.sh ] && source ~/.local/share/secnpmlly/secnpmlly.sh
