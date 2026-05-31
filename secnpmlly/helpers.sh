@@ -12,12 +12,17 @@ _npm_supply_prompt() {
 }
 
 # ── Detect and lint the project lockfile. ─────────────────────
+# Priority order: bun.lock (text) > bun.lockb (binary) > others
+# bun.lock is yarn-compatible text, so we pass --type yarn for it.
 _npm_supply_lint_lockfile() {
   local lockfile=''
-  if   [ -f package-lock.json ]; then lockfile=package-lock.json
-  elif [ -f pnpm-lock.yaml ];    then lockfile=pnpm-lock.yaml
-  elif [ -f bun.lockb ];         then lockfile=bun.lockb
-  elif [ -f yarn.lock ];         then lockfile=yarn.lock
+  local lockfile_type=''
+
+  if   [ -f package-lock.json ]; then lockfile=package-lock.json; lockfile_type='npm'
+  elif [ -f bun.lock ];          then lockfile=bun.lock;          lockfile_type='yarn'
+  elif [ -f pnpm-lock.yaml ];    then lockfile=pnpm-lock.yaml;    lockfile_type='npm'
+  elif [ -f bun.lockb ];         then lockfile=bun.lockb;         lockfile_type=''
+  elif [ -f yarn.lock ];         then lockfile=yarn.lock;         lockfile_type='yarn'
   fi
 
   if [ -z "$lockfile" ]; then
@@ -25,9 +30,15 @@ _npm_supply_lint_lockfile() {
     return 0
   fi
 
+  local type_arg=''
+  if [ -n "$lockfile_type" ]; then
+    type_arg="--type $lockfile_type"
+  fi
+
   printf '%s[i]%s Running lockfile-lint on %s ...\n' "$(c cyan)" "$(c off)" "$lockfile"
   if command lockfile-lint \
     --path "$lockfile" \
+    $type_arg \
     --validate-https \
     --validate-integrity \
     --validate-package-names \
