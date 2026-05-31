@@ -4,7 +4,7 @@
 # ── Prompt the user on failure; default is NO (abort). ────────
 _npm_supply_prompt() {
   printf '%s[?]%s Continue anyway? [y/N] ' "$(c bold_yellow)" "$(c off)"
-  read -r _answer
+  read -r _answer </dev/tty
   case "$_answer" in
     [yY]|[yY][eE][sS]) return 0 ;;
     *) echo 'Aborting.'; return 1 ;;

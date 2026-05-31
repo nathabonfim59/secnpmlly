@@ -70,7 +70,7 @@ _import_trusted_key() {
     | sed 's/^/    /'
   echo ""
   printf '  %sImport this key into your GPG keyring? [Y/n]%s ' "$(c bold_yellow)" "$(c off)"
-  read -r _answer
+  read -r _answer </dev/tty
   case "$_answer" in
     n|N|no|No|NO)
       printf '%s[!]%s Key not imported. Update will skip signature verification.\n' "$(c bold_yellow)" "$(c off)"

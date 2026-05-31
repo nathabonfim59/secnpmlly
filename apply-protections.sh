@@ -207,7 +207,7 @@ install_secnpmlly() {
         | sed 's/^/    /'
       echo ""
       printf '  %sImport this key into your GPG keyring? [Y/n]%s ' "$(c bold_yellow)" "$(c off)"
-      read -r _answer
+      read -r _answer </dev/tty
       case "$_answer" in
         n|N|no|No|NO)
           warn "Key not imported. secnpmlly update will skip signature verification."
