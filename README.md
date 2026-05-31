@@ -133,6 +133,12 @@ source "$HOME/.local/share/secnpmlly/secnpmlly.sh"
 - [MAINTAINER.md](MAINTAINER.md) - Release process, GPG key management, key rotation
 - [CONTRIBUTING.md](CONTRIBUTING.md) - How to contribute, security policy
 
+## Acknowledgements
+
+The idea for secnpmlly was inspired by this video:
+
+**[npm installs can hack your laptop (Here's how to stop it)](https://www.youtube.com/watch?v=Wq6yMdt11LM)**
+
 ## License
 
 MIT
